@@ -1,0 +1,24 @@
+# Docker Hub connector — password is Harness secret dockerhub-pat.
+# Use a *private* Hub repo so the cluster must receive an image pull secret.
+
+connector:
+  name: dockerhub-connector
+  identifier: dockerhubconnector
+  description: ""
+  # REPLACE
+  orgIdentifier: <YOUR_ORG_IDENTIFIER>
+  # REPLACE
+  projectIdentifier: <YOUR_PROJECT_IDENTIFIER>
+  type: DockerRegistry
+  spec:
+    dockerRegistryUrl: https://index.docker.io/v2/
+    providerType: DockerHub
+    auth:
+      type: UsernamePassword
+      spec:
+        # REPLACE: your Docker Hub username
+        username: <YOUR_DOCKERHUB_USER>
+        passwordRef: dockerhub-pat
+    executeOnDelegate: false
+    proxy: false
+    ignoreTestConnection: false

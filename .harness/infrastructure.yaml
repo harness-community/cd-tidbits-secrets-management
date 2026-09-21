@@ -1,0 +1,15 @@
+infrastructureDefinition:
+  name: podinfo-infra
+  identifier: podinfoinfra
+  # REPLACE
+  orgIdentifier: <YOUR_ORG_IDENTIFIER>
+  # REPLACE
+  projectIdentifier: <YOUR_PROJECT_IDENTIFIER>
+  environmentRef: podinfoenv
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: k8sconnector
+    namespace: podinfo
+    releaseName: release-<+INFRA_KEY_SHORT_ID>
+  allowSimultaneousDeployments: false

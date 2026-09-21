@@ -1,0 +1,39 @@
+service:
+  name: podinfo
+  identifier: podinfo
+  # REPLACE
+  orgIdentifier: <YOUR_ORG_IDENTIFIER>
+  # REPLACE
+  projectIdentifier: <YOUR_PROJECT_IDENTIFIER>
+  description: podinfo from a private Docker Hub repo; pull secret from Harness
+  tags: {}
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: podinfo_image
+          sources:
+            - identifier: podinfo_image
+              type: DockerRegistry
+              spec:
+                connectorRef: dockerhubconnector
+                # REPLACE: private Docker Hub repo (must not be public)
+                imagePath: <YOUR_DOCKERHUB_USER>/podinfo
+                tag: <+input>
+      manifests:
+        - manifest:
+            identifier: podinfo_manifests
+            type: K8sManifest
+            spec:
+              skipResourceVersioning: false
+              enableDeclarativeRollback: false
+              store:
+                type: Github
+                spec:
+                  connectorRef: githubconnector
+                  repoName: harness-community/cd-tidbits-secrets-management
+                  gitFetchType: Branch
+                  branch: main
+                  paths:
+                    - manifests/

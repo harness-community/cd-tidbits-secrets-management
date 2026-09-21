@@ -1,0 +1,19 @@
+# Kubernetes cluster connector — InheritFromDelegate.
+# Install a Delegate in the target cluster first.
+
+connector:
+  name: k8s-connector
+  identifier: k8sconnector
+  description: ""
+  # REPLACE
+  orgIdentifier: <YOUR_ORG_IDENTIFIER>
+  # REPLACE
+  projectIdentifier: <YOUR_PROJECT_IDENTIFIER>
+  type: K8sCluster
+  spec:
+    credential:
+      type: InheritFromDelegate
+    # REPLACE: tags that match your Delegate
+    delegateSelectors:
+      - <YOUR_DELEGATE_SELECTOR>
+    ignoreTestConnection: false

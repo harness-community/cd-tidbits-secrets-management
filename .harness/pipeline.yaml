@@ -1,5 +1,6 @@
-# Deploy a *private* Docker Hub image. Harness injects an image pull
-# secret from dockerhub-pat via the Docker connector on the service.
+# Deploy podinfo from a *private* Docker Hub repo. Push that image yourself
+# first (this pipeline does not build). Harness injects an image pull secret
+# from dockerhub-pat via the Docker connector on the service.
 
 pipeline:
   name: secrets-private-registry

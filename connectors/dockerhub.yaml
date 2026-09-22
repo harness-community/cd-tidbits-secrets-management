@@ -1,5 +1,5 @@
 # Docker Hub connector — password is Harness secret dockerhub-pat.
-# Use a *private* Hub repo so the cluster must receive an image pull secret.
+# Point this at the *private* Hub repo where you already pushed a podinfo image.
 
 connector:
   name: dockerhub-connector

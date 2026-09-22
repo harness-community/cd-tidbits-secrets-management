@@ -18,7 +18,7 @@ service:
               type: DockerRegistry
               spec:
                 connectorRef: dockerhubconnector
-                # REPLACE: private Docker Hub repo (must not be public)
+                # REPLACE: private Hub repo where you already pushed a podinfo image
                 imagePath: <YOUR_DOCKERHUB_USER>/podinfo
                 tag: <+input>
       manifests:

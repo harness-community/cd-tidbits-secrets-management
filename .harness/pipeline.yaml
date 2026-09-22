@@ -1,5 +1,5 @@
-# Clone podinfo, push to a *private* Docker Hub repo, deploy with
-# an image pull secret injected from Harness secret dockerhub-pat.
+# Deploy a *private* Docker Hub image. Harness injects an image pull
+# secret from dockerhub-pat via the Docker connector on the service.
 
 pipeline:
   name: secrets-private-registry
@@ -10,51 +10,7 @@ pipeline:
   orgIdentifier: <YOUR_ORG_IDENTIFIER>
   tags: {}
   gitOpsEnabled: false
-  properties:
-    ci:
-      codebase:
-        connectorRef: githubconnector
-        repoName: harness-community/podinfo
-        build:
-          type: branch
-          spec:
-            branch: master
   stages:
-    - stage:
-        name: Build
-        identifier: build
-        type: CI
-        spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-              - step:
-                  type: BuildAndPushDockerRegistry
-                  name: Build and Push podinfo
-                  identifier: build_and_push_podinfo
-                  timeout: 20m
-                  spec:
-                    connectorRef: dockerhubconnector
-                    # REPLACE: private Docker Hub repo (same as service imagePath)
-                    repo: <YOUR_DOCKERHUB_USER>/podinfo
-                    tags:
-                      - <+pipeline.sequenceId>
-                      - latest
-                    dockerfile: Dockerfile
-                    context: .
-                    caching: true
-        failureStrategies:
-          - onFailure:
-              errors:
-                - AllErrors
-              action:
-                type: MarkAsFailure
     - stage:
         name: Deploy
         identifier: deploy
@@ -75,7 +31,7 @@ pipeline:
                         - identifier: podinfo_image
                           type: DockerRegistry
                           spec:
-                            tag: <+pipeline.sequenceId>
+                            tag: latest
           environment:
             environmentRef: podinfoenv
             deployToAll: false

@@ -2,102 +2,46 @@
 
 > **Bite-sized how-to** | ~15 min setup
 
----
+A Harness **secret** stores a credential. YAML only holds the secret **id**. At runtime Harness injects the value and masks it in logs.
 
-## What is a Harness secret?
-
-A **secret** is a credential Harness stores for you. Pipelines and connectors only hold the secret **id**. At runtime Harness injects the value and masks it in logs.
-
-This tidbit uses one secret for one job: a **private Docker Hub** image. The cluster cannot pull that image anonymously. Harness injects the registry password as a Kubernetes image-pull secret so the deploy succeeds.
-
-Auth, scopes, and other secret types: [Connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors) (credentials live on the connector; the **value** is a Harness secret).
+This tidbit uses one secret: a Docker Hub token for a **private** image. The cluster cannot pull that image anonymously. Harness creates a Kubernetes image-pull secret from the Docker connector so the deploy succeeds.
 
 | Piece | Role |
 |---|---|
 | Text secret `dockerhub-pat` | Docker Hub access token |
-| Docker Hub connector | Uses that secret to push and to mint a pull secret |
-| Manifest `imagePullSecrets` | `<+artifacts.primary.imagePullSecret>` — injected on the cluster |
+| Docker Hub connector | Uses that secret to create the pull secret |
+| Manifest `imagePullSecrets` | `<+artifacts.primary.imagePullSecret>` |
+
+Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-text-secrets), [connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors).
 
 ---
 
 ## Prerequisites
 
-Before you start, make sure you have:
-
-- A Harness account with a **Project** (note its org + project identifiers).
-- Harness Cloud build credits.
-- A Docker Hub user and a **private** repository you can push to (e.g. `<user>/podinfo`).
-- A Docker Hub **access token** (not your account password).
-- A Kubernetes cluster with a Harness **Delegate** in it, and namespace `podinfo`.
-- A GitHub PAT that can clone [harness-community/podinfo](https://github.com/harness-community/podinfo) and this tidbit repo.
+- Harness **Project** (org + project identifiers).
+- Private Docker Hub repo with an image you can pull (e.g. `<user>/podinfo:latest`) and an **access token** (not your account password).
+- Kubernetes cluster with a Harness **Delegate**, namespace `podinfo`.
 
 ---
 
-## Step 1 — Create the registry secret
+## Setup
 
-1. **Project Settings → Secrets → + New Secret → Text**.
-2. Id: `dockerhub-pat`. Paste the Docker Hub access token.
-3. Save. Confirm the **Id** is `dockerhub-pat` (underscores/hyphens as you typed — copy the Id, not the name).
+1. **Secret.** Project Settings → Secrets → Text. Id `dockerhub-pat`. Paste the Hub token. Never put the token in Git or pipeline YAML.
 
-Do **not** put the token in Git or in pipeline YAML.
+2. **Docker Hub connector.** [`connectors/dockerhub.yaml`](./connectors/dockerhub.yaml): URL `https://index.docker.io/v2/`, username + password → `dockerhub-pat`. Test connection. The Hub repo must be **Private**.
 
-You also need a GitHub PAT secret (`github-pat`) so CI can clone podinfo. That is not the lesson; it is only how the pipeline gets source.
+3. **Kubernetes connector.** [`connectors/k8s.yaml`](./connectors/k8s.yaml) (`InheritFromDelegate`).
 
----
-
-## Step 2 — Docker Hub connector (points at the secret)
-
-1. **Connectors → Docker Registry**.
-2. Name `dockerhub-connector`, id `dockerhubconnector`.
-3. URL `https://index.docker.io/v2/`. Username + password → secret `dockerhub-pat`.
-4. Test connection. Save.
-
-YAML: [`connectors/dockerhub.yaml`](./connectors/dockerhub.yaml).
-
-On the Docker Hub website, set `<YOUR_DOCKERHUB_USER>/podinfo` (or whatever image path you use) to **Private**.
-
----
-
-## Step 3 — GitHub + Kubernetes connectors, env, infra, service
-
-Create (or reuse) GitHub and Kubernetes connectors: [`connectors/github.yaml`](./connectors/github.yaml), [`connectors/k8s.yaml`](./connectors/k8s.yaml).
-
-Paste environment, infrastructure, and service YAML. Edit every `# REPLACE:` line. The service artifact must be the **private** image path. Manifests in this repo already request the injected pull secret:
+4. **Env, infra, service, pipeline.** Paste these and replace every `# REPLACE:` line. Service `imagePath` must be the **private** image. Manifests are inline on the service (readable copies in [`manifests/`](./manifests/)).
 
 | File | Creates |
 |---|---|
 | [`.harness/environment.yaml`](./.harness/environment.yaml) | Environment `podinfoenv` |
-| [`.harness/infrastructure.yaml`](./.harness/infrastructure.yaml) | KubernetesDirect on `k8sconnector` |
-| [`.harness/service.yaml`](./.harness/service.yaml) | Service `podinfo` + `manifests/` |
+| [`.harness/infrastructure.yaml`](./.harness/infrastructure.yaml) | Infra on `k8sconnector`, namespace `podinfo` |
+| [`.harness/service.yaml`](./.harness/service.yaml) | Service `podinfo` + inline manifests |
+| [`.harness/pipeline.yaml`](./.harness/pipeline.yaml) | Deploy-only rolling pipeline |
 
----
-
-## Step 4 — Pipeline
-
-Paste [`.harness/pipeline.yaml`](./.harness/pipeline.yaml). Set org, project, and the same private image path as the service. Save.
-
-Build clones podinfo and **pushes to the private repo**. Deploy applies manifests that pull with the Harness-injected secret.
-
----
-
-## Step 5 — Run (expect GREEN)
-
-**Run**, branch `master`.
-
-Without the pull secret (or with a public-only connector), the pod stays `ImagePullBackOff`. With `dockerhub-pat` on the connector and `<+artifacts.primary.imagePullSecret>` in the Deployment, the pod reaches **Running**.
-
-```sh
-kubectl -n podinfo get po
-kubectl -n podinfo describe po <pod>   # should show a pull secret, not 401
-```
-
-**Green plus Running is the correct outcome.** The cluster used a credential it never saw in Git.
-
----
-
-## Pipeline YAML reference
-
-[`.harness/pipeline.yaml`](./.harness/pipeline.yaml) — CI build/push to a **private** image, then a Kubernetes rolling deploy. [`manifests/deployment.yaml`](./manifests/deployment.yaml) requests the injected pull secret:
+The Deployment references the injected pull secret:
 
 ```yaml
 spec:
@@ -110,25 +54,21 @@ spec:
 
 ---
 
-## Common Issues & Tips
+## Run
 
-**`ImagePullBackOff` / 401.** Repo is private and the pull secret was not created. Check secret id `dockerhub-pat`, connector Test Connection, and `imagePullSecrets` on the Deployment.
+**Run** the pipeline.
 
-**Clone fails.** GitHub PAT / `githubconnector` — not this lesson; test that connector.
+Without the pull secret, the pod stays `ImagePullBackOff`. With `dockerhub-pat` on the connector and `imagePullSecrets` on the Deployment, the pod is **Running**:
+
+```sh
+kubectl -n podinfo get po
+kubectl -n podinfo describe po <pod>   # ImagePullSecrets present; no 401
+```
+
+Green plus Running means the cluster used a credential that never appeared in Git.
+
+**401 / ImagePullBackOff.** Check secret id, connector Test Connection, private Hub repo, and `imagePullSecrets` on the live Deployment.
 
 **Deploy forbidden.** Delegate service account needs rights in namespace `podinfo`.
 
----
-
-## What's next?
-
-- Rotate `dockerhub-pat` in Secrets; re-run. The pipeline YAML does not change.
-- Store `.harness/` as Remote so reviews see secret *ids*, never values.
-
----
-
-## Resources
-
-- [Add and reference text secrets](https://developer.harness.io/docs/platform/secrets/add-use-text-secrets)
-- [Connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors)
-- [podinfo](https://github.com/harness-community/podinfo)
+Rotate `dockerhub-pat` in Secrets and re-run; pipeline YAML does not change.

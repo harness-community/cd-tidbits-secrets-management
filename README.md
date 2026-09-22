@@ -6,7 +6,7 @@ A Harness **secret** stores a credential. YAML only holds the secret **id**. At 
 
 This tidbit uses one secret: a Docker Hub token for a **private podinfo image**. The cluster cannot pull that image anonymously. Harness creates a Kubernetes image-pull secret from the Docker connector so the deploy succeeds.
 
-This walkthrough does **not** build or push. Before you start, build [podinfo](https://github.com/harness-community/podinfo) yourself and **push the image to a private Docker Hub repository** you own (for example `<YOUR_DOCKERHUB_USER>/podinfo:latest`). The pipeline deploys that existing tag.
+This walkthrough does **not** build or push. You need a **podinfo** image already in a **private Docker Hub repository** you own, tagged `latest` (for example `<YOUR_DOCKERHUB_USER>/podinfo:latest`). To build and push that image, use the [connector usage tidbit](https://github.com/harness-community/cd-tidbits-connector-usage), then set the Hub repo to **Private**. This pipeline only deploys that existing tag.
 
 | Piece | Role |
 |---|---|
@@ -23,7 +23,7 @@ Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-
 ## Prerequisites
 
 - Harness **Project** (org + project identifiers).
-- A **podinfo** image already pushed to **your private Docker Hub repository**, tagged `latest` (or change the pipeline tag to match). Source: [harness-community/podinfo](https://github.com/harness-community/podinfo). This tidbit does not clone, build, or push that repo.
+- A **podinfo** image already pushed to **your private Docker Hub repository**, tagged `latest` (or change the pipeline tag to match). Build and push with [cd-tidbits-connector-usage](https://github.com/harness-community/cd-tidbits-connector-usage), then mark the Hub repo **Private**. This tidbit does not build or push.
 - A Docker Hub **access token** (not your account password) that can pull that private image.
 - Kubernetes cluster with a Harness **Delegate**, namespace `podinfo`.
 - A GitHub PAT that can read this tidbit repo (Harness fetches [`manifests/`](./manifests/) from Git).

@@ -14,10 +14,8 @@ spec:
       labels:
         app: podinfo
     spec:
-      {{- if .Values.dockercfg }}
       imagePullSecrets:
-        - name: {{.Values.dockercfg}}
-      {{- end }}
+        - name: podinfo-dockerhub-pull
       containers:
         - name: podinfod
           image: {{.Values.image}}

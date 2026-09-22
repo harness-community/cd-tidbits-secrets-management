@@ -38,5 +38,6 @@ service:
                   paths:
                     - manifests/deployment.yaml
                     - manifests/service.yaml
+                    - manifests/docker-secret.yaml
               valuesPaths:
                 - manifests/values.yaml

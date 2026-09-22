@@ -13,7 +13,8 @@ This walkthrough does **not** build or push. Before you start, build [podinfo](h
 | Text secret `dockerhub-pat` | Docker Hub access token |
 | Docker Hub connector | Uses that secret to create the pull secret |
 | GitHub connector | At deploy time, clones **this** tidbit repo so Harness can apply [`manifests/`](./manifests/) |
-| Manifest values | [`manifests/values.yaml`](./manifests/values.yaml) — `<+artifacts.primary.image>` and `<+artifacts.primary.imagePullSecret>` |
+| Manifest values | [`manifests/values.yaml`](./manifests/values.yaml) — image and dockercfg expressions |
+| Kubernetes Secret | [`manifests/docker-secret.yaml`](./manifests/docker-secret.yaml) — `podinfo-dockerhub-pull` |
 
 Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-text-secrets), [connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors).
 
@@ -48,7 +49,7 @@ Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-
 | [`.harness/service.yaml`](./.harness/service.yaml) | Service `podinfo`; manifests from this repo |
 | [`.harness/pipeline.yaml`](./.harness/pipeline.yaml) | Deploy-only rolling pipeline |
 
-Harness renders expressions in [`manifests/values.yaml`](./manifests/values.yaml), then templates the Deployment:
+Harness renders expressions in [`manifests/values.yaml`](./manifests/values.yaml). The image goes on the container; the dockercfg value is **Secret data**, not the Secret name:
 
 ```yaml
 # values.yaml
@@ -57,9 +58,16 @@ dockercfg: <+artifacts.primary.imagePullSecret>
 ```
 
 ```yaml
+# docker-secret.yaml
+type: kubernetes.io/dockercfg
+data:
+  .dockercfg: {{.Values.dockercfg}}
+```
+
+```yaml
 # deployment.yaml
 imagePullSecrets:
-  - name: {{.Values.dockercfg}}
+  - name: podinfo-dockerhub-pull
 containers:
   - name: podinfod
     image: {{.Values.image}}

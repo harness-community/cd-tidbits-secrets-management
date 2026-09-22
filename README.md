@@ -12,6 +12,7 @@ This walkthrough does **not** build or push. Before you start, build [podinfo](h
 |---|---|
 | Text secret `dockerhub-pat` | Docker Hub access token |
 | Docker Hub connector | Uses that secret to create the pull secret |
+| GitHub connector | At deploy time, clones **this** tidbit repo so Harness can apply [`manifests/`](./manifests/) |
 | Manifest `imagePullSecrets` | `<+artifacts.primary.imagePullSecret>` |
 
 Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-text-secrets), [connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors).
@@ -24,6 +25,7 @@ Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-
 - A **podinfo** image already pushed to **your private Docker Hub repository**, tagged `latest` (or change the pipeline tag to match). Source: [harness-community/podinfo](https://github.com/harness-community/podinfo). This tidbit does not clone, build, or push that repo.
 - A Docker Hub **access token** (not your account password) that can pull that private image.
 - Kubernetes cluster with a Harness **Delegate**, namespace `podinfo`.
+- A GitHub PAT that can read this tidbit repo (Harness fetches [`manifests/`](./manifests/) from Git).
 
 ---
 
@@ -35,13 +37,15 @@ Docs: [text secrets](https://developer.harness.io/docs/platform/secrets/add-use-
 
 3. **Kubernetes connector.** [`connectors/k8s.yaml`](./connectors/k8s.yaml) (`InheritFromDelegate`).
 
-4. **Env, infra, service, pipeline.** Paste these and replace every `# REPLACE:` line. Set service `imagePath` to the private Hub repo where you **already pushed podinfo** (for example `<YOUR_DOCKERHUB_USER>/podinfo`). Manifests are inline on the service (readable copies in [`manifests/`](./manifests/)).
+4. **GitHub connector.** [`connectors/github.yaml`](./connectors/github.yaml), secret `github-pat`. The pipeline has no clone step. At **Deploy**, Harness uses this connector to clone **this** tidbit repo and apply [`manifests/deployment.yaml`](./manifests/deployment.yaml) and [`manifests/service.yaml`](./manifests/service.yaml). Without it, Rolling Deploy cannot load the manifests.
+
+5. **Env, infra, service, pipeline.** Paste these and replace every `# REPLACE:` line. Set service `imagePath` to the private Hub repo where you **already pushed podinfo** (for example `<YOUR_DOCKERHUB_USER>/podinfo`). The service must set `connectorRef: githubconnector` and `paths: [manifests/]`.
 
 | File | Creates |
 |---|---|
 | [`.harness/environment.yaml`](./.harness/environment.yaml) | Environment `podinfoenv` |
 | [`.harness/infrastructure.yaml`](./.harness/infrastructure.yaml) | Infra on `k8sconnector`, namespace `podinfo` |
-| [`.harness/service.yaml`](./.harness/service.yaml) | Service `podinfo` + inline manifests |
+| [`.harness/service.yaml`](./.harness/service.yaml) | Service `podinfo`; manifests from this repo |
 | [`.harness/pipeline.yaml`](./.harness/pipeline.yaml) | Deploy-only rolling pipeline |
 
 The Deployment references the injected pull secret:

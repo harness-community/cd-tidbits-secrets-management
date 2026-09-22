@@ -1,0 +1,30 @@
+# GitHub connector — fetch Kubernetes manifests from this tidbit repo.
+# Create Text Secret github-pat first (read access to the repo is enough).
+
+connector:
+  name: github-connector
+  identifier: githubconnector
+  description: ""
+  # REPLACE
+  orgIdentifier: <YOUR_ORG_IDENTIFIER>
+  # REPLACE
+  projectIdentifier: <YOUR_PROJECT_IDENTIFIER>
+  type: Github
+  spec:
+    url: https://github.com
+    type: Account
+    authentication:
+      type: Http
+      spec:
+        type: UsernameToken
+        spec:
+          # REPLACE
+          username: <YOUR_GITHUB_USER>
+          tokenRef: github-pat
+    apiAccess:
+      type: Token
+      spec:
+        tokenRef: github-pat
+    executeOnDelegate: false
+    proxy: false
+    ignoreTestConnection: false

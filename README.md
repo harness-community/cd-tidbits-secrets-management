@@ -31,8 +31,6 @@ Before you start, make sure you have:
 - A Kubernetes cluster with a Harness **Delegate** in it, and namespace `podinfo`.
 - A GitHub PAT that can clone [harness-community/podinfo](https://github.com/harness-community/podinfo) and this tidbit repo.
 
-If you already ran [cd-tidbits-connector-usage](https://github.com/harness-community/cd-tidbits-connector-usage), reuse those GitHub and Kubernetes connectors. Make the Hub repo **private** and keep going from the secret + pull-secret step.
-
 ---
 
 ## Step 1 — Create the registry secret
@@ -99,7 +97,7 @@ kubectl -n podinfo describe po <pod>   # should show a pull secret, not 401
 
 ## Pipeline YAML reference
 
-[`.harness/pipeline.yaml`](./.harness/pipeline.yaml) — same shape as the connector tidbit: CI build/push, then a Kubernetes rolling deploy. The difference is the **private** image and this in [`manifests/deployment.yaml`](./manifests/deployment.yaml):
+[`.harness/pipeline.yaml`](./.harness/pipeline.yaml) — CI build/push to a **private** image, then a Kubernetes rolling deploy. [`manifests/deployment.yaml`](./manifests/deployment.yaml) requests the injected pull secret:
 
 ```yaml
 spec:
@@ -134,4 +132,3 @@ spec:
 - [Add and reference text secrets](https://developer.harness.io/docs/platform/secrets/add-use-text-secrets)
 - [Connectors](https://developer.harness.io/harness-platform/3.0/in-harness-3.0/connectors)
 - [podinfo](https://github.com/harness-community/podinfo)
-- [Connector usage tidbit](https://github.com/harness-community/cd-tidbits-connector-usage)

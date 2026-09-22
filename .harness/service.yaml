@@ -36,4 +36,7 @@ service:
                   gitFetchType: Branch
                   branch: main
                   paths:
-                    - manifests/
+                    - manifests/deployment.yaml
+                    - manifests/service.yaml
+              valuesPaths:
+                - manifests/values.yaml

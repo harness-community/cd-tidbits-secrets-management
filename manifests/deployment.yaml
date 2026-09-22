@@ -14,11 +14,13 @@ spec:
       labels:
         app: podinfo
     spec:
+      {{- if .Values.dockercfg }}
       imagePullSecrets:
-        - name: <+artifacts.primary.imagePullSecret>
+        - name: {{.Values.dockercfg}}
+      {{- end }}
       containers:
         - name: podinfod
-          image: <+artifacts.primary.image>
+          image: {{.Values.image}}
           imagePullPolicy: Always
           ports:
             - name: http

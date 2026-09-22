@@ -1,0 +1,3 @@
+# Harness renders these expressions, then applies them as Go template values.
+image: <+artifacts.primary.image>
+dockercfg: <+artifacts.primary.imagePullSecret>
